@@ -1,4 +1,3 @@
-This repository implements a production-oriented Document Intelligence and RAG pipeline for RFQ/BOQ analysis. The README below matches the codebase in `app/` (FastAPI), the configuration in `app/config.py`, and the included processing modules.
 
 ---
 
