@@ -1,0 +1,23 @@
+{
+    "project_name": "RFQ Analysis 5:59:59 AM",
+    "timestamp": "2026-04-09T06:00:01.017428",
+    "summary": {
+        "success": 0,
+        "errors": 2
+    },
+    "file_details": [
+        {
+            "file": "industry.csv",
+            "status": "error",
+            "message": "Invalid JSON returned from LLM"
+        },
+        {
+            "file": "JanuaryCv.pdf",
+            "status": "error",
+            "message": "Invalid JSON returned from LLM"
+        }
+    ],
+    "engineering_analysis": {
+        "message": "No machine-readable entities found to analyze."
+    }
+}

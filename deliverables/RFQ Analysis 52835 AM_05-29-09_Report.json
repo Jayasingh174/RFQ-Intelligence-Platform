@@ -1,0 +1,43 @@
+{
+    "project_name": "RFQ Analysis 5:28:35 AM",
+    "timestamp": "2026-04-09T05:29:09.610490",
+    "summary": {
+        "success": 0,
+        "errors": 6
+    },
+    "file_details": [
+        {
+            "file": "BOQ for RFQ Test.xlsx",
+            "status": "error",
+            "message": "DocumentIntelligence.extract_structured_data() missing 1 required positional argument: 'raw_text'"
+        },
+        {
+            "file": "HPE-SDS-M-F1-FF-00.dwg",
+            "status": "error",
+            "message": "DocumentIntelligence.extract_structured_data() missing 1 required positional argument: 'raw_text'"
+        },
+        {
+            "file": "HPE-SDS-M-F2-FF-00.dwg",
+            "status": "error",
+            "message": "DocumentIntelligence.extract_structured_data() missing 1 required positional argument: 'raw_text'"
+        },
+        {
+            "file": "HPE-SDS-M-GF-FF-00.dwg",
+            "status": "error",
+            "message": "DocumentIntelligence.extract_structured_data() missing 1 required positional argument: 'raw_text'"
+        },
+        {
+            "file": "Reading RFQ.pdf",
+            "status": "error",
+            "message": "DocumentIntelligence.extract_structured_data() missing 1 required positional argument: 'raw_text'"
+        },
+        {
+            "file": "RFQ Doc.pdf",
+            "status": "error",
+            "message": "DocumentIntelligence.extract_structured_data() missing 1 required positional argument: 'raw_text'"
+        }
+    ],
+    "engineering_analysis": {
+        "message": "No machine-readable entities found to analyze."
+    }
+}
