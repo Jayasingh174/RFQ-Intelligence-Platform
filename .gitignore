@@ -1,25 +1,25 @@
-# Environment
-.env
-.env.*
-
 # Virtual environment
 venv/
 .venv/
+
+# Environment variables / secrets
+.env
+.env.*
 
 # Python cache
 __pycache__/
 *.py[cod]
 
-# Generated / temporary files
-uploads/
+# Temporary files
 temp_dxf/
+tmp/
+temp/
+
+# Uploaded/generated files
+uploads/
+
+# Vector database / local generated data
 vectorstore/
-
-# Local data
-data/
-
-# Logs
-*.log
 
 # IDE
 .vscode/
@@ -27,3 +27,16 @@ data/
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+
+# IDE (if anyone on the team uses PyCharm/IntelliJ)
+.idea/
+
+# Python packaging / test artifacts (currently none in the repo, but cheap to add)
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+cad_result = extract_dwg(file_path, output_dir=DWG_TEMP_DIR)  # 🔧 match document_service.py's output dir
