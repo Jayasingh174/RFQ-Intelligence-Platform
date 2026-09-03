@@ -3,52 +3,28 @@
 # ==========================================
 fastapi
 uvicorn[standard]
-python-multipart
+python-multipart    # CRITICAL: Required for file uploads
 pydantic
-pydantic-settings
-jinja2
-python-dotenv
+python-dotenv       # CRITICAL: Required by app/config.py (load_dotenv)
 
 # ==========================================
 # 🧠 AI, RAG & VECTOR DATABASE
 # ==========================================
-openai
-faiss-cpu
-rank_bm25
-scikit-learn        # Added for additional fuzzy matching utilities
-scipy
-
-# ==========================================
-# ⚠️ CRITICAL C++ COMPATIBILITY PINS
-# ==========================================
-# Do not unpin NumPy or remove these! They are required by your Reranker.
-numpy==1.26.4
-sentence-transformers>=3.0.0
-torch>=2.1.0
-transformers>=4.41.0
+openai              # For AsyncOpenAI (Embeddings & LLM)
+faiss-cpu           # The Vector Store (Use faiss-gpu if using an NVIDIA card)
+rank_bm25           # For keyword/hybrid search
+numpy               # Required for vector math and FAISS arrays
+langchain_text_splitters   # CRITICAL: Required by app/brain/chunk_service.py
 
 # ==========================================
 # 📊 DATA PROCESSING & EXCEL (BOQ)
 # ==========================================
-pandas
-openpyxl
-xlrd
+pandas              # For row-by-row BOQ extraction
+openpyxl            # CRITICAL: The engine Pandas needs to read .xlsx files
 
 # ==========================================
-# 📄 DOCUMENT PARSERS & EXPORTERS
+# 📄 DOCUMENT PARSERS
 # ==========================================
-PyMuPDF
-pdfplumber
-python-docx
-ezdxf
-fpdf2     
-matplotlib
-          # CRITICAL: Modern PDF generation (replaces legacy fpdf)
-
-# ==========================================
-# 🧮 TABLE EXTRACTION & UTILITIES
-# ==========================================
-# Note: Camelot requires Ghostscript installed on your OS (which you just did!)
-camelot-py[cv]
-opencv-python
-langchain-text-splitters
+PyPDF2              # Used in app/services/pdf_service.py
+python-docx         # Used in app/services/docx_service.py
+ezdxf               # Used in app/services/cad_service.py
