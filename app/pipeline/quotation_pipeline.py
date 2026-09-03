@@ -55,6 +55,16 @@ async def process_rfq_bundle(project_name: str, file_paths: List[str]) -> Dict[s
             with open(f"deliverables/requirements_{filename}.json", "w") as f:
                 json.dump(result, f, indent=4)
 
+            # Carry the extracted content through to the bundle response,
+            # not just a status string — the frontend/API caller gets the
+            # structured items, BOM, specs, tables, CAD summary per file.
+            file_result: Dict[str, Any] = {
+                "file": filename,
+                "file_type": ext,
+                "status": "processed",
+                **{k: v for k, v in result.items() if k not in ("status",)}
+            }
+
             # 2️⃣ STAGE: Entity extraction
             if ext in EXCEL_EXTS:
                 boq_data = extract_boq_data(str(path))
@@ -66,7 +76,7 @@ async def process_rfq_bundle(project_name: str, file_paths: List[str]) -> Dict[s
                         qty = row.get("Quantity") or row.get("Qty")
                         if item and qty:
                             entities.append(normalize_entity(item, qty, f"BOQ ({filename})", "BOQ", str(path)))
-                status_msg = "processed as BOQ"
+                file_result["status"] = "processed as BOQ"
             else:
                 # CAD entities — parse_dxf()/extract_dwg() return a dict
                 # shaped {"entities": [...], "blocks": [...]}, not a flat
@@ -93,18 +103,24 @@ async def process_rfq_bundle(project_name: str, file_paths: List[str]) -> Dict[s
                     else:
                         entities.append(normalize_entity(item, 1, f"Spec BOM ({filename})", "Spec BOM", str(path)))
 
-                status_msg = "processed as unstructured"
+                file_result["status"] = "processed as unstructured"
 
             if not entities:
-                status_msg += " (no entities found)"
+                file_result["status"] += " (no entities found)"
 
-            processed_results.append({"file": filename, "status": status_msg})
+            file_result["entities"] = entities
+            processed_results.append(file_result)
             all_normalized_entities.extend(entities)
             success_count += 1
 
         except Exception as e:
             logger.exception(f"Error processing file {filename}: {e}")
-            processed_results.append({"file": filename, "status": "error", "message": str(e)})
+            processed_results.append({
+                "file": filename,
+                "status": "error",
+                "message": str(e),
+                "entities": [],
+            })
             error_count += 1
 
     # 3️⃣ STAGE: Conflict detection & fallback
