@@ -7,6 +7,8 @@ import numpy as np
 import logging
 from rank_bm25 import BM25Okapi
 
+from app.config import SAVE_DIR, EMBEDDING_DIMENSION  # 🔧 FIX: import config values
+
 # Set up simple logging so you can see what the code is doing in your terminal
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 logger = logging.getLogger(__name__)
@@ -60,25 +62,19 @@ class VectorService:
     # ==========================================
     # ADDING DATA (BATCH PROCESSING)
     # ==========================================
-    # ==========================================
-    # ADDING DATA (BATCH PROCESSING)
-    # ==========================================
 
     def add_documents(self, chunks: list, embeddings, source_filename: str):
         """
         Takes a list of text chunks and their embeddings, and adds them to the store.
         Batch processing is much faster and safer than adding them one by one.
         """
-        # 🔥 FIX: Safe NumPy Array Check (Using "is None or len() == 0")
         if not chunks or embeddings is None or len(embeddings) == 0:
             logger.warning("No chunks or embeddings provided.")
             return
 
-        # Prepare lists for new, non-duplicate data
         new_embeddings = []
         new_docs = []
 
-        # Filter out duplicates
         for chunk, emb in zip(chunks, embeddings):
             text_hash = self._get_hash(chunk)
             
@@ -95,21 +91,13 @@ class VectorService:
             logger.info("All chunks were duplicates. Nothing new added.")
             return
 
-        # Convert embeddings to the format FAISS needs (numpy float32 array)
         embeddings_array = np.array(new_embeddings).astype("float32")
-        
-        # L2 Normalization (Required for Cosine Similarity / Inner Product)
         faiss.normalize_L2(embeddings_array)
-        
-        # Add to FAISS index
         self.index.add(embeddings_array)
-        
-        # Add to our text database
         self.documents.extend(new_docs)
-        
-        # Save everything to disk immediately so they stay perfectly in sync
         self.save_index()
         logger.info(f"✅ Successfully added {len(new_docs)} new chunks from {source_filename}.")
+
     # ==========================================
     # SEARCHING DATA
     # ==========================================
@@ -123,33 +111,26 @@ class VectorService:
             logger.warning("Database is empty. Returning nothing.")
             return []
 
-        # --- 1. Vector Search (FAISS) ---
         q_emb_array = np.array([query_embedding]).astype("float32")
         faiss.normalize_L2(q_emb_array)
-        
-        # Get distances and indexes from FAISS
+
         distances, indices = self.index.search(q_emb_array, top_k * 2)
-        
+
         vector_results = []
         for idx in indices[0]:
             if 0 <= idx < len(self.documents):
                 vector_results.append(self.documents[idx])
 
-        # --- 2. Keyword Search (BM25) ---
         keyword_results = []
         if self.bm25 is not None:
             scores = self.bm25.get_scores(self._tokenize(query))
-            # Get top indices based on score
             ranked_indices = np.argsort(scores)[::-1][:top_k * 2]
             keyword_results = [self.documents[i] for i in ranked_indices if scores[i] > 0]
 
-        # --- 3. Combine Results & Remove Duplicates ---
         combined_dict = {}
         for doc in vector_results + keyword_results:
-            # Using the hash as a key ensures we don't return the same chunk twice
-            combined_dict[doc["hash"]] = doc 
-            
-        # Convert back to a list and return only the top_k requested
+            combined_dict[doc["hash"]] = doc
+
         final_results = list(combined_dict.values())[:top_k]
         return final_results
 
@@ -164,7 +145,6 @@ class VectorService:
             with open(self.docs_file, "wb") as f:
                 pickle.dump(self.documents, f)
             
-            # Rebuild keyword search whenever we save new data
             self._rebuild_bm25() 
             logger.info("💾 Index and Documents saved to disk successfully.")
         except Exception as e:
@@ -172,14 +152,12 @@ class VectorService:
 
     def load_index(self):
         """Loads data from the hard drive into memory."""
-        # Check if BOTH files exist. If one is missing, they are out of sync.
         if os.path.exists(self.index_file) and os.path.exists(self.docs_file):
             try:
                 self.index = faiss.read_index(self.index_file)
                 with open(self.docs_file, "rb") as f:
                     self.documents = pickle.load(f)
                 
-                # Re-populate the hash set to prevent future duplicates
                 self.document_hashes = {doc["hash"] for doc in self.documents}
                 self._rebuild_bm25()
                 
@@ -193,7 +171,6 @@ class VectorService:
 
     def _initialize_empty_state(self):
         """Creates a fresh, empty database."""
-        # IndexFlatIP calculates Cosine Similarity (best for text embeddings)
         self.index = faiss.IndexFlatIP(self.dimension)
         self.documents = []
         self.document_hashes = set()
@@ -206,4 +183,4 @@ class VectorService:
 # Instantiate this ONCE at the top of your main FastAPI file.
 # Do NOT create a new one inside your routes.
 
-vector_store = VectorService(save_dir="./vectorstore", dimension=3072)
+vector_store = VectorService(save_dir=SAVE_DIR, dimension=EMBEDDING_DIMENSION)  # 🔧 FIX: from config, not hardcoded
