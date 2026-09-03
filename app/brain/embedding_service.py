@@ -3,15 +3,15 @@ import logging
 import asyncio
 from typing import List
 from openai import AsyncOpenAI
-from app.config import OPENAI_API_KEY, EMBEDDING_MODEL
+from app.config import OPENAI_API_KEY, EMBEDDING_MODEL, MAX_RETRIES  # 🔧 FIX: import MAX_RETRIES
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 logger = logging.getLogger(__name__)
 
 # ------------------------------
-# Utility: Retry Wrapper (FIXED)
+# Utility: Retry Wrapper
 # ------------------------------
-async def with_retry(func, *args, retries=3, delay=1, **kwargs):
+async def with_retry(func, *args, retries=MAX_RETRIES, delay=1, **kwargs):  # 🔧 FIX: default from config
     """
     Safely retries an async function by creating a fresh coroutine
     on every attempt.
@@ -28,7 +28,7 @@ async def with_retry(func, *args, retries=3, delay=1, **kwargs):
             await asyncio.sleep(delay * (2 ** attempt))
 
 # ------------------------------
-# Batch Embeddings (FIXED)
+# Batch Embeddings
 # ------------------------------
 async def embed_texts(
     texts: List[str],
@@ -44,10 +44,9 @@ async def embed_texts(
         cleaned_batch = [t.strip() if isinstance(t, str) else "" for t in original_batch]
 
         try:
-            # 🔥 FIX: Pass the function reference and kwargs separately
             response = await asyncio.wait_for(
                 with_retry(
-                    client.embeddings.create,  # Notice there are no () here!
+                    client.embeddings.create,
                     model=EMBEDDING_MODEL,
                     input=cleaned_batch
                 ),
@@ -63,7 +62,7 @@ async def embed_texts(
 
         except Exception as e:
             logger.exception(f"Embedding batch failed at index {i}: {e}")
-            dim = len(embeddings_list[0]) if embeddings_list else 3072 # Fallback to your model's dim
+            dim = len(embeddings_list[0]) if embeddings_list else 3072
             for _ in original_batch:
                 embeddings_list.append(np.zeros(dim, dtype="float32"))
 
@@ -73,17 +72,16 @@ async def embed_texts(
     return np.vstack(embeddings_list)
 
 # ------------------------------
-# Single Query Embedding (FIXED)
+# Single Query Embedding
 # ------------------------------
 async def embed_query(text: str) -> np.ndarray:
     if not isinstance(text, str) or not text.strip():
         raise ValueError("Query text cannot be empty.")
 
     try:
-        # 🔥 FIX: Pass the function reference and kwargs separately
         response = await asyncio.wait_for(
             with_retry(
-                client.embeddings.create, # Notice there are no () here!
+                client.embeddings.create,
                 model=EMBEDDING_MODEL,
                 input=text.strip()
             ),
