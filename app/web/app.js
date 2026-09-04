@@ -305,7 +305,7 @@ async function loadDocuments() {
 async function deleteDocument(filename) {
     if (!confirm(`Are you sure you want to delete "${filename}"?`)) return;
     try {
-        await fetch(`/delete/${filename}`, { method: "DELETE" });
+        await fetch(`/documents/${filename}`, { method: "DELETE" });
         loadDocuments();
     } catch (error) {
         alert("Error deleting document.");
