@@ -103,47 +103,37 @@ async function uploadBundle(files) {
    PHASE 4: REQUIREMENT MATRIX UI & EXPORT
    ========================================= */
    
-// The central download engine (LOUD DEBUG VERSION - ONLY ONE!)
-async function triggerDownload(analysisData, format = 'csv') {
+// The central download engine.
+// NOTE: the backend (export_router.py) only ever generates CSV — there is
+// no image or HTML-table export implemented server-side. This function
+// used to accept a `format` param and rename the download to .png/.html,
+// which was misleading: it downloaded a CSV file with the wrong extension.
+// Simplified to CSV-only until real image/HTML export exists server-side.
+async function triggerDownload(analysisData) {
     try {
-        console.log("🚀 1. Starting download for format:", format);
-        
-        // Pass format as a URL parameter so FastAPI reads it correctly
-        const response = await fetch(`/export/conflicts?format=${format}`, {
+        const response = await fetch("/export/conflicts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(analysisData)
         });
-        
-        console.log("📡 2. Backend response status:", response.status);
 
         if (!response.ok) {
             const errText = await response.text();
             throw new Error(`Server returned ${response.status}: ${errText}`);
         }
-        
-        const blob = await response.blob();
-        console.log("💾 3. File generated! Size in bytes:", blob.size);
 
+        const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a"); 
+        const a = document.createElement("a");
         a.style.display = 'none';
         a.href = url;
-        
-        let extension = 'csv';
-        if (format === 'image') extension = 'png';
-        if (format === 'html_table') extension = 'html';
+        a.download = "RFQ_Conflict_Report.csv";
 
-        a.download = `RAG_Conflict_Report.${extension}`;
-        
         document.body.appendChild(a);
-        console.log("🎯 4. Forcing browser to click download...");
         a.click();
-        
-        // Cleanup
+
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        console.log("✅ 5. Download sequence finished!");
 
     } catch (error) {
         console.error("❌ Download error:", error);
@@ -189,7 +179,7 @@ function displayConflictReport(responseData) {
 
     const downloadBtn = document.getElementById("downloadCsvBtn");
     if (downloadBtn) {
-        downloadBtn.onclick = () => triggerDownload(analysis, 'csv');
+        downloadBtn.onclick = () => triggerDownload(analysis);
     }
 }
 
@@ -237,7 +227,10 @@ async function askAI() {
             if (!currentAnalysisData || Object.keys(currentAnalysisData).length === 0) {
                 aiDiv.innerHTML += `<br><small style="color: orange;">⚠️ No analysis data found to export. Try uploading files first.</small>`;
             } else {
-                await triggerDownload(currentAnalysisData, data.export_format);
+                // export_format from the backend's intent detection is
+                // ignored here — triggerDownload() only produces CSV
+                // (see note above triggerDownload's definition).
+                await triggerDownload(currentAnalysisData);
             }
             return; 
         }
